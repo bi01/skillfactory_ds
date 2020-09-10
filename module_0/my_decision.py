@@ -66,16 +66,13 @@ def score_game(game_core) -> int:
     np.random.seed(1)
 
     random_array = np.random.randint(1, 101, size=1000)
-
-    count_ls = [game_core(item) for item in random_array]
-    score = int(np.mean(count_ls))
+    score = int(np.mean(list(map(game_core, random_array))))
     print(f"Ваш алгоритм угадывает число в среднем за {score} попыток")
 
     return score
 
 
 if __name__ == "__main__":
-
     # Проверяем
     score_game(game_core_v2)
     score_game(game_core_v1)
