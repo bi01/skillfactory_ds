@@ -1,3 +1,1 @@
-Предобработка filter=lfs diff=lfs merge=lfs -text
-данных/datasets/train.csv filter=lfs diff=lfs merge=lfs -text
-ML-2. filter=lfs diff=lfs merge=lfs -text
+ML-2.[[:space:]]Предобработка[[:space:]]данных/datasets/train.csv filter=lfs diff=lfs merge=lfs -text
