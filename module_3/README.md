@@ -22,11 +22,11 @@
 - **Повысить точность прогнозов**, которые делает модель, с помощью более тщательной подготовки данных. При подготовке датасета нужно будет не только избавиться от пропущенных (None) значений и нечисловых признаков, но и **сгенерировать новые признаки** (добавить в датафрейм новые столбцы) на основе информации, уже содержащейся в данных.
 
 ## Файлы проекта
-- <a href='my_decision.ipynb.ipynb'>my_decision.ipynb.ipynb</a> - ноутбук с основным решением
-- <a href='answers_questions.ipynb'>answers_questions.ipynb</a> - ноутбук с ответами по задачам в проекте
-- <a href='helpers.py'>helpers.py</a> - вспомогательный модуль со скриптами, чтобы не перегружать основной ноутбук
-- <a href='./datasets/main_task.csv'>./datasets/main_task.csv</a> - датасет проекта
-- <a href='README.md'>README.md</a> - описание проекта
+- [my_decision.ipynb.ipynb](my_decision.ipynb.ipynb) - ноутбук с основным решением
+- [answers_questions.ipynb](answers_questions.ipynb) - ноутбук с ответами по задачам в проекте
+- [helpers.py](helpers.py) - вспомогательный модуль со скриптами, чтобы не перегружать основной ноутбук
+- [./datasets/main_task.csv](./datasets/main_task.csv) - датасет проекта
+- [README.md](README.md) - описание проекта
 
 
 ## Первоначальная версия датасета
