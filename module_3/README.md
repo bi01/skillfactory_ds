@@ -24,7 +24,7 @@
 ## Файлы проекта
 - [my_decision.ipynb.ipynb](my_decision.ipynb.ipynb) - ноутбук с основным решением
 - [answers_questions.ipynb](answers_questions.ipynb) - ноутбук с ответами по задачам в проекте
-- [helpers.py](helpers.py) - вспомогательный модуль со скриптами, чтобы не перегружать основной ноутбук
+- [helpers.py](helpers.py) - вспомогательный модуль со скриптами, чтобы не перегружать кодом ноутбуки 
 - [./datasets/main_task.csv](./datasets/main_task.csv) - датасет проекта
 - [README.md](README.md) - описание проекта
 
