@@ -1,10 +1,14 @@
 import ast
 import datetime 
+
 import numpy as np
 import pandas as pd
 
 from more_itertools import flatten
 from pandas.api.types import CategoricalDtype
+from sklearn.model_selection import train_test_split  
+from sklearn.ensemble import RandomForestRegressor 
+from sklearn import metrics 
 
 
 def convert_cuisine(row: [str, np.nan]) -> [list, np.nan]:
@@ -53,26 +57,123 @@ def convert_datetime(cell):
 
 
 
-class CleanerDatasetPipeline():
+
+
+class ModelProcessing():
+    """ Dividing and preparing model for learning
+    """
+    def __init__(self, df) -> None:
+        self.df = df
+        
+        # the order of steps is important!
+        self.pipeline = (
+            self.get_Xy,
+            self.get_train_test,
+            self.training_model,
+            self.get_MAE
+        )
+              
+    def get_Xy(self) -> dict[pd.DataFrame, pd.Series]:
+        """ Getting 2 pieces - data as learning dataset and vector of a target variable 
+            
+            where:
+                self.Х - data with info by restaurant, 
+                self.у - target variable (ranking of restaurants)
+        """
+        self.X = self.df.drop(['restaurant_id', 'rating'], axis = 1)  
+        self.y = self.df['rating'] 
+        
+#         return {
+#             'X': self.X,
+#             'y': self.y
+#         }
+
+    def get_train_test(self) -> dict[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+        """ Separating dataframe on pieces, needed for the learning and testing of the model
+
+            Data sets with label:
+            - "train" - will be using for a learning of the module, 
+            - "test" - for only testing.  
+            - before separating we remove useless columns from train/test dataset
+
+            For the testing we will be using 25% from source data set.  
+        """
+        (self.X_train, 
+         self.X_test, 
+         self.y_train, 
+         self.y_test) = train_test_split(self.X, self.y, test_size=0.25)       
+        
+        dropped_columns =  [
+            'city', 
+            'cuisine_style', 
+            'url_ta', 
+            'id_ta',
+            'review1',
+            'review_date1',
+            'review2', 
+            'review_date2',
+            'timedelta_reviews'
+        ]
+        
+        self.X_train = self.X_train.drop(dropped_columns, axis=1).fillna(0)
+        self.X_test = self.X_test.drop(dropped_columns, axis=1).fillna(0)
+        
+#         return {
+#             'X_train': self.X_train, 
+#             'X_test': self.X_test, 
+#             'y_train': self.y_train,
+#             'y_test': self.y_test
+#         }       
+
+    def training_model(self) -> np.array:
+        """ Create, learning, predicting result for a model
+        """
+        self.regr = RandomForestRegressor(n_estimators=100)  
+        self.regr.fit(self.X_train, self.y_train)  
+        self.y_pred = self.regr.predict(self.X_test)
+
+        return self.y_pred
+
+    def get_MAE(self) -> float:
+        """ Returning the MAE indicator
+        """
+        return metrics.mean_absolute_error(self.y_test, self.y_pred)
+        
+    def show_steps(self) -> None:
+        """ Show doc info by each step/process in pipeline
+        """
+        for item_number, process in enumerate(self.pipeline):
+            print(item_number, process.__doc__.split('\n', 1)[0])
+        
+    def run(self) -> None:
+        """ Running all steps for preraring of a model
+        """  
+        for item_number, process in enumerate(self.pipeline):
+            result = process()
+            doc_info =  process.__doc__.split('\n', 1)[0]
+            print(item_number,  doc_info, ':', result)
+     
+            
+class DatasetCleaner():
     """ Cleaning, adding features and transformating dataset
     
         Using as separate steps, as all steps in pipeline
     """
     
     def __init__(self, df: pd.DataFrame) -> None:
-        """
+        """ Setting dataframe and pipeline when creating example of this class
         """
         self.df = df
         
-        self.process_pipeline = (
+        # the order of steps is important!
+        self.pipeline = (
             self.change_columns,
             self.processing_price_range,
             self.processing_city,
             self.processing_cuisine_style,
             self.processing_reviews,
         )
-
-        
+  
     def change_columns(self) -> pd.DataFrame:
         """ We give more understandable names of the data frame columns
         """
@@ -90,11 +191,12 @@ class CleanerDatasetPipeline():
         ]
         return self.df
     
-
     def processing_price_range(self) -> pd.DataFrame:
         """ Processing `price range` column
             
-            Removing `$` character, changing to categorial type for this column
+            - Removing `$` character, 
+            - changing to categorial type for this column
+            - replace Nan values to 2 (median) value
         """
         price_range_map = {
             np.NaN: 2,
@@ -104,9 +206,15 @@ class CleanerDatasetPipeline():
         }
 
         self.df['price_range'] = self.df.price_range.replace(to_replace=price_range_map)
-        self.df['price_range'] = self.df.price_range.astype(
-            CategoricalDtype(categories=[1, 2, 3], ordered=True)
-        )
+
+        # set categories equal to 1-low, 2-median, 3-high prices
+        pd.Categorical(self.df.price_range, [1, 2, 3], ordered=True)
+
+#         OR
+#         self.df['price_range'] = self.df.price_range.astype(
+#             CategoricalDtype(categories=, ordered=True)
+#         )
+
         return self.df
     
     def processing_city(self) -> pd.DataFrame:
@@ -142,20 +250,21 @@ class CleanerDatasetPipeline():
         # dropping useless now a `reviews` column
         self.df.drop(['reviews'], axis=1, inplace=True) 
         
-        # create new column
+        # create new column `timedelta_reviews` and filling nan values
         self.df['timedelta_reviews'] = self.df.review_date1 - self.df.review_date2
+        self.df.timedelta_reviews.fillna(pd.Timedelta(seconds=0))
         
     
-    def pipeline_desciption(self) -> None:
+    def show_steps(self) -> None:
         """ Show doc info by each step/process in pipeline
         """
-        for item_number, process in enumerate(self.process_pipeline):
+        for item_number, process in enumerate(self.pipeline):
             print(item_number, process.__doc__.split('\n', 1)[0])
         
-    def run_pipeline(self) -> pd.DataFrame:
+    def run(self) -> pd.DataFrame:
         """ Run pipeline during which transformations are applied for specified data frame
         """
-        for process in self.process_pipeline:
+        for process in self.pipeline:
             process()
         
         return self.df
