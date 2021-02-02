@@ -143,7 +143,7 @@ class ModelProcessing():
         """ Show doc info by each step/process in pipeline
         """
         for item_number, process in enumerate(self.pipeline):
-            print(item_number, process.__doc__.split('\n', 1)[0])
+            print(item_number, '-', process.__doc__.split('\n', 1)[0])
         
     def run(self) -> None:
         """ Running all steps for preraring of a model
@@ -151,7 +151,7 @@ class ModelProcessing():
         for item_number, process in enumerate(self.pipeline):
             result = process()
             doc_info =  process.__doc__.split('\n', 1)[0]
-            print(item_number,  doc_info, ':', result)
+            print(item_number, doc_info, ':', result)
      
             
 class DatasetCleaner():
@@ -193,27 +193,40 @@ class DatasetCleaner():
     
     def processing_price_range(self) -> pd.DataFrame:
         """ Processing `price range` column
-            
+
+            - replace Nan values - they split equally into the remaining three categories
             - Removing `$` character, 
             - changing to categorial type for this column
-            - replace Nan values to 2 (median) value
+
         """
+        # раскидаем поровну на три категории все пропущенные значения, 
+        # сохраняя пропорции между ними 
+        na_part_values = len(self.df[self.df.price_range.isnull()]) // 3
+
+        for x in self.df[self.df.price_range.isnull()][:na_part_values].index:
+            self.df.at[x, 'price_range'] = '$'
+
+        for x in self.df[self.df.price_range.isnull()][:na_part_values].index:
+            self.df.at[x, 'price_range'] = '$$$$'
+
+        self.df.price_range.fillna(value='$$ - $$$', inplace=True)
+        len(self.df[self.df.price_range.isna()])
+
+        # заменим значения на целочисленные категории 
         price_range_map = {
-            np.NaN: 2,
-            '$': 1,
-            '$$ - $$$': 2,
-            '$$$$': 3
+            '$': 'cheap',
+            '$$ - $$$': 'average',
+            '$$$$': 'expensive'
         }
+        self.df['price_range'] = self.df.price_range.map(price_range_map)
 
-        self.df['price_range'] = self.df.price_range.replace(to_replace=price_range_map)
-
-        # set categories equal to 1-low, 2-median, 3-high prices
-        pd.Categorical(self.df.price_range, [1, 2, 3], ordered=True)
-
-#         OR
-#         self.df['price_range'] = self.df.price_range.astype(
-#             CategoricalDtype(categories=, ordered=True)
-#         )
+        # устанавливаем категории в соотвествии: cheap-$, average-$$-$$$, expensive-$$$$
+        pd.Categorical(self.df.price_range, ['cheap', 'average', 'expensive'], ordered=True)
+        
+        # dummy переменные для значений категорий price_range
+        data_dummies = pd.get_dummies(self.df.price_range, prefix='price')
+        self.df = self.df.merge(data_dummies, left_index=True, right_index=True)
+        self.df.drop(['price_range'], axis=1, inplace=True)
 
         return self.df
     
@@ -254,12 +267,11 @@ class DatasetCleaner():
         self.df['timedelta_reviews'] = self.df.review_date1 - self.df.review_date2
         self.df.timedelta_reviews.fillna(pd.Timedelta(seconds=0))
         
-    
     def show_steps(self) -> None:
         """ Show doc info by each step/process in pipeline
         """
         for item_number, process in enumerate(self.pipeline):
-            print(item_number, process.__doc__.split('\n', 1)[0])
+            print(item_number, '-', process.__doc__.split('\n', 1)[0])
         
     def run(self) -> pd.DataFrame:
         """ Run pipeline during which transformations are applied for specified data frame
@@ -267,5 +279,5 @@ class DatasetCleaner():
         for process in self.pipeline:
             process()
         
-        return self.df
+        return self.df.copy()
         
